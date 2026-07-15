@@ -48,10 +48,10 @@ export default function Login() {
     } catch (error: any) {
       console.log(error);
 
-     
       toast.error(
-     "Login Failed"
-);
+        error.response?.data?.message ||
+          "Login Failed"
+      );
     } finally {
       setLoading(false);
     }
@@ -86,8 +86,13 @@ export default function Login() {
     setEmail("");
     setPassword("");
 
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
+
+    toast.error(
+      error.response?.data?.message ||
+        "Signup Failed"
+    );
   } finally {
     setLoading(false);
   }
