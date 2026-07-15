@@ -5,7 +5,7 @@ const router = express.Router();
 const {
   saveMessage,
   getChatHistory,
-} = require("../controllers/chatController");
+} = require("../controllers/chatcontroller");
 
 const authMiddleware = require("../middleware/authMiddleware");
 
