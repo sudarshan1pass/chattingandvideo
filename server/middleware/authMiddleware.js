@@ -1,8 +1,13 @@
 const jwt = require("jsonwebtoken");
 
 const authMiddleware = (req, res, next) => {
-   console.log(req.headers);
   try {
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({
+        success: false,
+        message: "JWT_SECRET is not configured",
+      });
+    }
 
     const token = req.headers.authorization?.split(" ")[1];
 
@@ -13,7 +18,10 @@ const authMiddleware = (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, "secretkey");
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
 
     req.user = decoded;
 

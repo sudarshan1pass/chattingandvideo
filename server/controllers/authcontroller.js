@@ -1,7 +1,78 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const  db  = require("../Config/db.js");
+const db = require("../Config/db.js");
+
+const isBlank = (value) =>
+  value === undefined ||
+  value === null ||
+  String(value).trim() === "";
+
+const logSignupPayload = (req, name, email, password) => {
+  if (process.env.DEBUG_AUTH !== "true") {
+    return;
+  }
+
+  console.log("SIGNUP req.body:", req.body);
+  console.log("SIGNUP name:", name);
+  console.log("SIGNUP email:", email);
+  console.log("SIGNUP password:", password);
+};
+
+const getJwtSecret = () => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is missing");
+  }
+
+  return process.env.JWT_SECRET;
+};
+
+const sendDatabaseError = (res, error, action) => {
+  console.error(`${action} failed:`, {
+    code: error.code,
+    message: error.message,
+    sqlMessage: error.sqlMessage,
+  });
+
+  if (error.code === "ER_DUP_ENTRY") {
+    return res.status(409).json({
+      success: false,
+      message: "User already exists",
+    });
+  }
+
+  if (
+    error.code === "ER_NO_SUCH_TABLE" ||
+    error.code === "ER_BAD_FIELD_ERROR"
+  ) {
+    return res.status(500).json({
+      success: false,
+      message:
+        "Database schema mismatch. Expected users table columns: id, name, email, password.",
+      error: error.sqlMessage || error.message,
+    });
+  }
+
+  if (
+    error.code === "ENOTFOUND" ||
+    error.code === "ECONNREFUSED" ||
+    error.code === "ETIMEDOUT" ||
+    error.code === "ER_ACCESS_DENIED_ERROR"
+  ) {
+    return res.status(500).json({
+      success: false,
+      message:
+        "Database connection failed. Check the Railway MySQL environment variables.",
+      error: error.message,
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    message: `${action} failed`,
+    error: error.sqlMessage || error.message,
+  });
+};
 
 
 // ================= SIGNUP =================
@@ -10,38 +81,62 @@ const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    const [result] = await db.query(
-      "SELECT * FROM users WHERE email = ?",
-      [email]
+    logSignupPayload(req, name, email, password);
+
+    if (
+      isBlank(name) ||
+      isBlank(email) ||
+      isBlank(password)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "name, email, and password are required",
+      });
+    }
+
+    const normalizedName = String(name).trim();
+    const normalizedEmail = String(email)
+      .trim()
+      .toLowerCase();
+    const plainPassword = String(password);
+
+    const [users] = await db.query(
+      "SELECT id FROM users WHERE email = ? LIMIT 1",
+      [normalizedEmail]
     );
 
-    if (result.length > 0) {
-      return res.status(400).json({
+    if (users.length > 0) {
+      return res.status(409).json({
         success: false,
         message: "User already exists",
       });
     }
 
     const hashedPassword =
-      await bcrypt.hash(password, 10);
+      await bcrypt.hash(plainPassword, 10);
 
-    await db.query(
+    const [insertResult] = await db.query(
       "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-      [name, email, hashedPassword]
+      [
+        normalizedName,
+        normalizedEmail,
+        hashedPassword,
+      ]
     );
 
     return res.status(201).json({
       success: true,
       message: "Signup Successful",
+      userId: insertResult.insertId,
     });
 
   } catch (error) {
-    console.log(error);
-
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    return sendDatabaseError(
+      res,
+      error,
+      "Signup"
+    );
   }
 };
 
@@ -54,22 +149,33 @@ const login = async (req, res) => {
 
     const { email, password } = req.body;
 
-    const [result] = await db.query(
-      "SELECT * FROM users WHERE email = ?",
-      [email]
+    if (isBlank(email) || isBlank(password)) {
+      return res.status(400).json({
+        success: false,
+        message: "email and password are required",
+      });
+    }
+
+    const normalizedEmail = String(email)
+      .trim()
+      .toLowerCase();
+
+    const [users] = await db.query(
+      "SELECT id, name, email, password FROM users WHERE email = ? LIMIT 1",
+      [normalizedEmail]
     );
 
-    if (result.length === 0) {
+    if (users.length === 0) {
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
-    const user = result[0];
+    const user = users[0];
 
     const isMatch = await bcrypt.compare(
-      password,
+      String(password),
       user.password
     );
 
@@ -85,7 +191,7 @@ const login = async (req, res) => {
         id: user.id,
         email: user.email,
       },
-      "secretkey",
+      getJwtSecret(),
       {
         expiresIn: "7d",
       }
@@ -100,12 +206,11 @@ const login = async (req, res) => {
 
   } catch (error) {
 
-    console.log(error);
-
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    return sendDatabaseError(
+      res,
+      error,
+      "Login"
+    );
   }
 };
 
@@ -123,15 +228,17 @@ const getUsers = async (req, res) => {
       users,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    return sendDatabaseError(
+      res,
+      error,
+      "Get users"
+    );
   }
 };
 
 module.exports = {
   signup,
-  login,getUsers
+  login,
+  getUsers,
 };
 

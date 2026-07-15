@@ -21,10 +21,16 @@ const chatSocket = require("./socket/server.js");
 // Middleware
 app.use(express.json());
 
+const frontendOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((origin) =>
+      origin.trim()
+    )
+  : [];
+
 const allowedOrigins = [
   "http://localhost:3000",
   "https://chattingandvideo.vercel.app",
-  process.env.FRONTEND_URL,
+  ...frontendOrigins,
 ].filter(Boolean);
 
 const corsOptions = {
@@ -49,24 +55,29 @@ app.get("/", (req, res) => {
   res.send("Chat Backend Running 🚀");
 });
 
-app.get("/test-db", (req, res) => {
+app.get("/test-db", async (req, res) => {
+  try {
+    const [result] = await db.query("SELECT 1 AS ok");
 
-  db.query(
-    "SELECT 1",
-    (err, result) => {
+    console.log("DB OK");
 
-      if (err) {
-        console.log(err);
+    res.json({
+      success: true,
+      result,
+    });
+  } catch (error) {
+    console.error("DB test failed:", {
+      code: error.code,
+      message: error.message,
+      sqlMessage: error.sqlMessage,
+    });
 
-        return res.status(500).json(err);
-      }
-
-      console.log("DB OK");
-
-      res.json(result);
-    }
-  );
-
+    res.status(500).json({
+      success: false,
+      message: "Database test failed",
+      error: error.sqlMessage || error.message,
+    });
+  }
 });
 
 // Socket.IO
