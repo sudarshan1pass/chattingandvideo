@@ -1,4 +1,3 @@
-// import api from "@/lib/api";
 import api from "../lib/api"
 
 export const signupUser = async (data) => {

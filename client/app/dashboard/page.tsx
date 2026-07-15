@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import api from "../lib/api";
 
 type User = {
   id: number;
@@ -54,19 +55,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const fetchUsers = async () => {
     try {
-      const token =
-        localStorage.getItem("token");
-
-      const res = await fetch(
-        "http://localhost:4000/api/auth/users",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = await res.json();
+      const { data } =
+        await api.get("/api/auth/users");
 
       if (data.success) {
         setUsers(data.users);
@@ -78,19 +68,9 @@ export default function DashboardPage() {
 
   const fetchChatHistory = async () => {
     try {
-      const token =
-        localStorage.getItem("token");
-
-      const res = await fetch(
-        `http://localhost:4000/api/chat/history/${selectedUser?.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const { data } = await api.get(
+        `/api/chat/history/${selectedUser?.id}`
       );
-
-      const data = await res.json();
 
       if (data.success) {
         setMessages(data.chats);
@@ -104,26 +84,13 @@ export default function DashboardPage() {
     if (!message.trim()) return;
 
     try {
-      const token =
-        localStorage.getItem("token");
-
-      const res = await fetch(
-        "http://localhost:4000/api/chat/send",
+      const { data } = await api.post(
+        "/api/chat/send",
         {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            receiverId: selectedUser?.id,
-            message,
-          }),
+          receiverId: selectedUser?.id,
+          message,
         }
       );
-
-      const data = await res.json();
 
       if (data.success) {
         setMessages((prev) => [
