@@ -27,11 +27,19 @@ export default function DashboardPage() {
   const [message, setMessage] =
     useState("");
 
-  const currentUser = JSON.parse(
-    localStorage.getItem("user") || "{}"
-  );
+  const [currentUser, setCurrentUser] =
+    useState<User | null>(null);
 
   useEffect(() => {
+    const storedUser =
+      localStorage.getItem("user");
+
+    if (storedUser) {
+      setCurrentUser(
+        JSON.parse(storedUser)
+      );
+    }
+
     fetchUsers();
   }, []);
 
@@ -121,7 +129,7 @@ export default function DashboardPage() {
         setMessages((prev) => [
           ...prev,
           {
-            sender_id: currentUser.id,
+            sender_id: currentUser?.id || 0,
             receiver_id:
               selectedUser?.id,
             message,
@@ -173,7 +181,7 @@ export default function DashboardPage() {
                 </h1>
 
                 <p className="text-sm text-gray-500">
-                  {currentUser?.name}
+                  {currentUser?.name || ""}
                 </p>
               </div>
 
@@ -272,13 +280,13 @@ export default function DashboardPage() {
                 {messages.map((msg, index) => (
                   <div
                     key={index}
-                    className={`mb-3 flex ${msg.sender_id === currentUser.id
+                    className={`mb-3 flex ${msg.sender_id === currentUser?.id
                       ? "justify-end"
                       : "justify-start"
                       }`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-3xl px-4 py-3 shadow ${msg.sender_id === currentUser.id
+                      className={`max-w-[80%] rounded-3xl px-4 py-3 shadow ${msg.sender_id === currentUser?.id
                         ? "bg-black text-white"
                         : "bg-white"
                         }`}
