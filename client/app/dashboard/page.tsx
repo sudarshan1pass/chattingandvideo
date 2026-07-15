@@ -6,14 +6,14 @@ import toast from "react-hot-toast";
 import api from "../lib/api";
 
 type User = {
-  id: number;
+  id: string;
   name: string;
   email: string;
 };
 
 type Message = {
-  sender_id: number;
-  receiver_id?: number;
+  sender_id: string;
+  receiver_id?: string;
   message: string;
 };
 
@@ -96,7 +96,7 @@ export default function DashboardPage() {
         setMessages((prev) => [
           ...prev,
           {
-            sender_id: currentUser?.id || 0,
+            sender_id: currentUser?.id || "",
             receiver_id:
               selectedUser?.id,
             message,

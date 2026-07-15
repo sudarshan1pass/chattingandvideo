@@ -1,27 +1,74 @@
-const db = require('../Config/db');
+const mongoose = require("mongoose");
+const Message = require("../models/Message");
 
-// Example: Message save karne ka function
-const saveMessage = async (senderId, receiverId, message) => {
-    try {
-        const sql = "INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)";
-        const [result] = await db.execute(sql, [senderId, receiverId, message]);
-        return result.insertId;
-    } catch (error) {
-        console.error("Database Error:", error);
-        throw error;
-    }
+const toChatResponse = (message) => ({
+  id: message._id.toString(),
+  sender_id: message.senderId.toString(),
+  receiver_id: message.receiverId.toString(),
+  message: message.message,
+  created_at: message.createdAt,
+});
+
+const ensureObjectId = (value, label) => {
+  if (!mongoose.Types.ObjectId.isValid(value)) {
+    throw new Error(`Invalid ${label}`);
+  }
 };
 
-// Example: Chat history fetch karne ka function
+const saveMessage = async (
+  senderId,
+  receiverId,
+  message
+) => {
+  try {
+    ensureObjectId(senderId, "senderId");
+    ensureObjectId(receiverId, "receiverId");
+
+    const savedMessage = await Message.create({
+      senderId,
+      receiverId,
+      message,
+    });
+
+    return savedMessage._id.toString();
+  } catch (error) {
+    console.error("Message save error:", {
+      name: error.name,
+      message: error.message,
+    });
+    throw error;
+  }
+};
+
 const getChatHistory = async (user1, user2) => {
-    try {
-        const sql = "SELECT * FROM messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) ORDER BY created_at ASC";
-        const [rows] = await db.execute(sql, [user1, user2, user2, user1]);
-        return rows;
-    } catch (error) {
-        console.error("Query Error:", error);
-        return [];
-    }
+  try {
+    ensureObjectId(user1, "user1");
+    ensureObjectId(user2, "user2");
+
+    const messages = await Message.find({
+      $or: [
+        {
+          senderId: user1,
+          receiverId: user2,
+        },
+        {
+          senderId: user2,
+          receiverId: user1,
+        },
+      ],
+    }).sort({ createdAt: 1 });
+
+    return messages.map(toChatResponse);
+  } catch (error) {
+    console.error("Chat history query error:", {
+      name: error.name,
+      message: error.message,
+    });
+    throw error;
+  }
 };
 
-module.exports = { saveMessage, getChatHistory };
+module.exports = {
+  saveMessage,
+  getChatHistory,
+};

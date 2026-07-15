@@ -1,75 +1,77 @@
-require("dotenv").config();
-const mysql = require("mysql2/promise");
+const path = require("path");
+const dns = require("node:dns");
+const mongoose = require("mongoose");
 
-const mysqlUrl =
-  process.env.MYSQL_PUBLIC_URL ||
-  process.env.MYSQL_URL ||
-  process.env.DATABASE_URL ||
-  process.env.MONGO_URL;
+require("dotenv").config({
+  path: path.resolve(__dirname, "../.env"),
+});
 
-const hasMysqlVars =
-  process.env.MYSQLHOST &&
-  process.env.MYSQLUSER &&
-  process.env.MYSQLPASSWORD &&
-  process.env.MYSQLDATABASE;
+const getMongoUrl = () => {
+  const mongoUrl =
+    process.env.MONGO_URL ||
+    process.env.MONGO_PUBLIC_URL;
 
-let dbConfig = mysqlUrl;
-
-if (!dbConfig && hasMysqlVars) {
-  dbConfig = {
-    host: process.env.MYSQLHOST,
-    port: Number(process.env.MYSQLPORT || 3306),
-    user: process.env.MYSQLUSER,
-    password: process.env.MYSQLPASSWORD,
-    database: process.env.MYSQLDATABASE,
-  };
-}
-
-if (!dbConfig) {
-  throw new Error(
-    "Missing MySQL configuration. Set MYSQL_PUBLIC_URL, MYSQL_URL, DATABASE_URL, or Railway MYSQLHOST/MYSQLUSER/MYSQLPASSWORD/MYSQLDATABASE variables."
-  );
-}
-
-if (
-  typeof dbConfig === "string" &&
-  /^mongodb(\+srv)?:\/\//i.test(dbConfig)
-) {
-  throw new Error(
-    "Invalid database configuration: MONGO_URL contains a MongoDB URI, but this server uses mysql2. Set MYSQL_PUBLIC_URL or DATABASE_URL to the Railway MySQL connection string."
-  );
-}
-
-const db = mysql.createPool(
-  typeof dbConfig === "string"
-    ? dbConfig
-    : {
-        ...dbConfig,
-        waitForConnections: true,
-        connectionLimit: 10,
-      }
-);
-
-async function verifyConnection() {
-  let connection;
-
-  try {
-    connection = await db.getConnection();
-    await connection.ping();
-    console.log("Railway MySQL Connected");
-  } catch (error) {
-    console.error("Railway MySQL connection failed:", {
-      code: error.code,
-      message: error.message,
-      sqlMessage: error.sqlMessage,
-    });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
+  if (!mongoUrl) {
+    throw new Error(
+      "MONGO_URL or MONGO_PUBLIC_URL is not defined"
+    );
   }
-}
 
-verifyConnection();
+  if (!/^mongodb(\+srv)?:\/\//i.test(mongoUrl)) {
+    throw new Error(
+      "Invalid MongoDB URL. It must start with mongodb:// or mongodb+srv://"
+    );
+  }
 
-module.exports = db;
+  return mongoUrl;
+};
+
+let connectionPromise;
+
+const connectDB = async () => {
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+
+  if (connectionPromise) {
+    return connectionPromise;
+  }
+
+  const mongoUrl = getMongoUrl();
+
+  if (mongoUrl.startsWith("mongodb+srv://")) {
+    const dnsServers = (
+      process.env.MONGO_DNS_SERVERS ||
+      "8.8.8.8,1.1.1.1"
+    )
+      .split(",")
+      .map((server) => server.trim())
+      .filter(Boolean);
+
+    dns.setServers(dnsServers);
+  }
+
+  connectionPromise = mongoose
+    .connect(mongoUrl, {
+      serverSelectionTimeoutMS: 10000,
+    })
+    .then(() => {
+      console.log("MongoDB connected");
+      return mongoose.connection;
+    })
+    .catch((error) => {
+      connectionPromise = null;
+      console.error("MongoDB connection error:", {
+        name: error.name,
+        message: error.message,
+      });
+      throw error;
+    });
+
+  return connectionPromise;
+};
+
+module.exports = {
+  connectDB,
+  mongoose,
+};

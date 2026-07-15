@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 
 // Database
-const db = require("./Config/db");
+const { connectDB, mongoose } = require("./Config/db");
 
 // Routes
 const chatRoutes = require("./routes/routes");
@@ -57,7 +57,12 @@ app.get("/", (req, res) => {
 
 app.get("/test-db", async (req, res) => {
   try {
-    const [result] = await db.query("SELECT 1 AS ok");
+    if (mongoose.connection.readyState !== 1) {
+      await connectDB();
+    }
+
+    const result =
+      await mongoose.connection.db.admin().ping();
 
     console.log("DB OK");
 
@@ -94,6 +99,15 @@ chatSocket(io);
 
 const PORT = process.env.PORT || 4000;
 
-server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+const startServer = async () => {
+  await connectDB();
+
+  server.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+};
+
+startServer().catch((error) => {
+  console.error("Server failed to start:", error.message);
+  process.exit(1);
 });

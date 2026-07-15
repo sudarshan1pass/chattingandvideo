@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const db = require("../Config/db.js");
+const User = require("../models/User");
 
 const isBlank = (value) =>
   value === undefined ||
@@ -27,53 +27,53 @@ const getJwtSecret = () => {
   return process.env.JWT_SECRET;
 };
 
-const sendDatabaseError = (res, error, action) => {
+const sendAppError = (res, error, action) => {
   console.error(`${action} failed:`, {
+    name: error.name,
     code: error.code,
     message: error.message,
-    sqlMessage: error.sqlMessage,
   });
 
-  if (error.code === "ER_DUP_ENTRY") {
+  if (error.code === 11000) {
     return res.status(409).json({
       success: false,
       message: "User already exists",
     });
   }
 
-  if (
-    error.code === "ER_NO_SUCH_TABLE" ||
-    error.code === "ER_BAD_FIELD_ERROR"
-  ) {
-    return res.status(500).json({
+  if (error.name === "ValidationError") {
+    return res.status(400).json({
       success: false,
-      message:
-        "Database schema mismatch. Expected users table columns: id, name, email, password.",
-      error: error.sqlMessage || error.message,
+      message: error.message,
     });
   }
 
-  if (
-    error.code === "ENOTFOUND" ||
-    error.code === "ECONNREFUSED" ||
-    error.code === "ETIMEDOUT" ||
-    error.code === "ER_ACCESS_DENIED_ERROR"
-  ) {
+  if (error.name === "CastError") {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid user id",
+    });
+  }
+
+  if (error.message === "JWT_SECRET is missing") {
     return res.status(500).json({
       success: false,
-      message:
-        "Database connection failed. Check the Railway MySQL environment variables.",
-      error: error.message,
+      message: "JWT_SECRET is not configured",
     });
   }
 
   return res.status(500).json({
     success: false,
     message: `${action} failed`,
-    error: error.sqlMessage || error.message,
+    error: error.message,
   });
 };
 
+const toSafeUser = (user) => ({
+  id: user._id.toString(),
+  name: user.name,
+  email: user.email,
+});
 
 // ================= SIGNUP =================
 
@@ -101,52 +101,42 @@ const signup = async (req, res) => {
       .toLowerCase();
     const plainPassword = String(password);
 
-    const [users] = await db.query(
-      "SELECT id FROM users WHERE email = ? LIMIT 1",
-      [normalizedEmail]
-    );
+    const existingUser = await User.findOne({
+      email: normalizedEmail,
+    }).select("_id");
 
-    if (users.length > 0) {
+    if (existingUser) {
       return res.status(409).json({
         success: false,
         message: "User already exists",
       });
     }
 
-    const hashedPassword =
-      await bcrypt.hash(plainPassword, 10);
-
-    const [insertResult] = await db.query(
-      "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-      [
-        normalizedName,
-        normalizedEmail,
-        hashedPassword,
-      ]
+    const hashedPassword = await bcrypt.hash(
+      plainPassword,
+      10
     );
+
+    const user = await User.create({
+      name: normalizedName,
+      email: normalizedEmail,
+      password: hashedPassword,
+    });
 
     return res.status(201).json({
       success: true,
       message: "Signup Successful",
-      userId: insertResult.insertId,
+      userId: user._id.toString(),
     });
-
   } catch (error) {
-    return sendDatabaseError(
-      res,
-      error,
-      "Signup"
-    );
+    return sendAppError(res, error, "Signup");
   }
 };
-
-
 
 // ================= LOGIN =================
 
 const login = async (req, res) => {
   try {
-
     const { email, password } = req.body;
 
     if (isBlank(email) || isBlank(password)) {
@@ -160,19 +150,16 @@ const login = async (req, res) => {
       .trim()
       .toLowerCase();
 
-    const [users] = await db.query(
-      "SELECT id, name, email, password FROM users WHERE email = ? LIMIT 1",
-      [normalizedEmail]
-    );
+    const user = await User.findOne({
+      email: normalizedEmail,
+    });
 
-    if (users.length === 0) {
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
-
-    const user = users[0];
 
     const isMatch = await bcrypt.compare(
       String(password),
@@ -188,7 +175,7 @@ const login = async (req, res) => {
 
     const token = jwt.sign(
       {
-        id: user.id,
+        id: user._id.toString(),
         email: user.email,
       },
       getJwtSecret(),
@@ -201,16 +188,10 @@ const login = async (req, res) => {
       success: true,
       message: "Login Successful",
       token,
-      user,
+      user: toSafeUser(user),
     });
-
   } catch (error) {
-
-    return sendDatabaseError(
-      res,
-      error,
-      "Login"
-    );
+    return sendAppError(res, error, "Login");
   }
 };
 
@@ -218,21 +199,18 @@ const getUsers = async (req, res) => {
   try {
     const currentUserId = req.user.id;
 
-    const [users] = await db.query(
-      "SELECT id,name,email FROM users WHERE id != ?",
-      [currentUserId]
-    );
+    const users = await User.find({
+      _id: { $ne: currentUserId },
+    })
+      .select("name email")
+      .sort({ createdAt: -1 });
 
     res.json({
       success: true,
-      users,
+      users: users.map(toSafeUser),
     });
   } catch (error) {
-    return sendDatabaseError(
-      res,
-      error,
-      "Get users"
-    );
+    return sendAppError(res, error, "Get users");
   }
 };
 
@@ -241,4 +219,3 @@ module.exports = {
   login,
   getUsers,
 };
-
