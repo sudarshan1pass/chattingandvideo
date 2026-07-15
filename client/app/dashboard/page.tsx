@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { CallIcon } from "@/components/call-icons";
 import api from "../lib/api";
+import { socket } from "../lib/socket";
 
 type User = {
   id: string;
@@ -17,7 +19,17 @@ type Message = {
   message: string;
 };
 
+type IncomingCall = {
+  callId: string;
+  callerId: string;
+  callerName: string;
+  receiverId: string;
+  type: "audio" | "video";
+  offer: RTCSessionDescriptionInit;
+};
+
 export default function DashboardPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] =
     useState<User | null>(null);
@@ -30,6 +42,8 @@ export default function DashboardPage() {
 
   const [currentUser, setCurrentUser] =
     useState<User | null>(null);
+  const [incomingCall, setIncomingCall] =
+    useState<IncomingCall | null>(null);
 
   useEffect(() => {
     const storedUser =
@@ -45,14 +59,30 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    if (!currentUser) return;
+
+    socket.connect();
+    socket.emit("join", currentUser.id);
+
+    const handleIncomingCall = (call: IncomingCall) => {
+      if (call.callerId === currentUser.id) return;
+
+      setIncomingCall(call);
+    };
+
+    socket.on("incoming-call", handleIncomingCall);
+
+    return () => {
+      socket.off("incoming-call", handleIncomingCall);
+    };
+  }, [currentUser]);
+
+  useEffect(() => {
     if (selectedUser) {
       fetchChatHistory();
     }
   }, [selectedUser]);
 
-
-
-  const router = useRouter();
   const fetchUsers = async () => {
     try {
       const { data } =
@@ -108,6 +138,58 @@ export default function DashboardPage() {
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const startCall = (type: "audio" | "video") => {
+    if (!selectedUser || !currentUser) {
+      toast.error("Select a user first");
+      return;
+    }
+
+    const path =
+      type === "video" ? "/video-call" : "/audio-call";
+
+    const query = new URLSearchParams({
+      peerId: selectedUser.id,
+      peerName: selectedUser.name,
+    });
+
+    router.push(`${path}?${query.toString()}`);
+  };
+
+  const acceptIncomingCall = () => {
+    if (!incomingCall) return;
+
+    sessionStorage.setItem(
+      `incoming-call:${incomingCall.callId}`,
+      JSON.stringify(incomingCall)
+    );
+
+    const path =
+      incomingCall.type === "video"
+        ? "/video-call"
+        : "/audio-call";
+
+    const query = new URLSearchParams({
+      peerId: incomingCall.callerId,
+      peerName: incomingCall.callerName,
+      incoming: "1",
+      callId: incomingCall.callId,
+    });
+
+    setIncomingCall(null);
+    router.push(`${path}?${query.toString()}`);
+  };
+
+  const declineIncomingCall = () => {
+    if (!incomingCall) return;
+
+    socket.emit("end-call", {
+      userId: incomingCall.callerId,
+      callId: incomingCall.callId,
+    });
+
+    setIncomingCall(null);
   };
 
   const handleLogout = () => {
@@ -232,12 +314,24 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="flex gap-2">
-                  <button className="rounded-full bg-gray-100 p-2">
-                    📞
+                  <button
+                    aria-label="Start audio call"
+                    className="grid size-10 place-items-center rounded-full bg-gray-100 text-gray-800 transition hover:bg-gray-200"
+                    onClick={() => startCall("audio")}
+                    title="Start audio call"
+                    type="button"
+                  >
+                    <CallIcon name="audio" />
                   </button>
 
-                  <button className="rounded-full bg-gray-100 p-2">
-                    📹
+                  <button
+                    aria-label="Start video call"
+                    className="grid size-10 place-items-center rounded-full bg-gray-100 text-gray-800 transition hover:bg-gray-200"
+                    onClick={() => startCall("video")}
+                    title="Start video call"
+                    type="button"
+                  >
+                    <CallIcon name="video" />
                   </button>
                 </div>
               </div>
@@ -295,6 +389,45 @@ export default function DashboardPage() {
           )}
         </section>
       </div>
+
+      {incomingCall && (
+        <div className="fixed inset-x-3 top-3 z-50 mx-auto max-w-md rounded-lg border border-gray-200 bg-white p-4 shadow-2xl">
+          <div className="flex items-center gap-3">
+            <div className="grid size-12 place-items-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 font-bold text-white">
+              {incomingCall.callerName
+                .charAt(0)
+                .toUpperCase()}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold">
+                {incomingCall.callerName}
+              </p>
+              <p className="text-sm text-gray-500">
+                Incoming {incomingCall.type} call
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button
+              className="rounded-lg bg-gray-100 px-4 py-2 font-semibold text-gray-800"
+              onClick={declineIncomingCall}
+              type="button"
+            >
+              Decline
+            </button>
+
+            <button
+              className="rounded-lg bg-green-600 px-4 py-2 font-semibold text-white"
+              onClick={acceptIncomingCall}
+              type="button"
+            >
+              Accept
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

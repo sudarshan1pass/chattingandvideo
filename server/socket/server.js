@@ -15,23 +15,34 @@ module.exports = (io) => {
 
     // Video Call
     socket.on("call-user", (data) => {
+      if (!data?.receiverId) return;
+
       io.to(data.receiverId.toString())
-        .emit("incoming-call", data);
+        .emit("incoming-call", {
+          ...data,
+          fromSocketId: socket.id,
+        });
     });
 
     socket.on("answer-call", (data) => {
+      if (!data?.callerId) return;
+
       io.to(data.callerId.toString())
         .emit("call-accepted", data);
     });
 
     socket.on("ice-candidate", (data) => {
+      if (!data?.userId) return;
+
       io.to(data.userId.toString())
-        .emit("ice-candidate", data.candidate);
+        .emit("ice-candidate", data);
     });
 
     socket.on("end-call", (data) => {
+      if (!data?.userId) return;
+
       io.to(data.userId.toString())
-        .emit("call-ended");
+        .emit("call-ended", data);
     });
 
   });
