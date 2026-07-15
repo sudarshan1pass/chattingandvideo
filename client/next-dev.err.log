@@ -1,0 +1,245 @@
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\Dell\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\Dell\OneDrive\Documents\catting-videocall\my-fullstack-app\client\package-lock.json
+
+⨯ ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:28:17
+Expected '</', got 'jsx text'
+  [90m26 |[0m [90m              Online[0m
+  [90m27 |[0m [90m            </span> */[0m}
+[31m[1m>[0m [90m28 |[0m           </div>
+  [90m   |[0m                 [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[31m[1m>[0m [90m29 |[0m
+  [90m   |[0m [31m[1m^[0m
+[31m[1m>[0m [90m30 |[0m           <div className=[32m"my-12 max-w-xl"[0m>
+  [90m   |[0m [31m[1m^^^^^^^^^^[0m
+  [90m31 |[0m             <p className=[32m"mb-4 text-sm font-medium uppercase tracking-[0.18em] text-[#f2c1...[0m
+  [90m32 |[0m               [33mSocial[0m workspace
+  [90m33 |[0m             </p>
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/app/page.tsx
+
+
+⨯ ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:28:17
+Expected '</', got 'jsx text'
+  [90m26 |[0m [90m              Online[0m
+  [90m27 |[0m [90m            </span> */[0m}
+[31m[1m>[0m [90m28 |[0m           </div>
+  [90m   |[0m                 [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[31m[1m>[0m [90m29 |[0m
+  [90m   |[0m [31m[1m^[0m
+[31m[1m>[0m [90m30 |[0m           <div className=[32m"my-12 max-w-xl"[0m>
+  [90m   |[0m [31m[1m^^^^^^^^^^[0m
+  [90m31 |[0m             <p className=[32m"mb-4 text-sm font-medium uppercase tracking-[0.18em] text-[#f2c1...[0m
+  [90m32 |[0m               [33mSocial[0m workspace
+  [90m33 |[0m             </p>
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/app/page.tsx
+
+
+⨯ ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:28:17
+Expected '</', got 'jsx text'
+  [90m26 |[0m [90m              Online[0m
+  [90m27 |[0m [90m            </span> */[0m}
+[31m[1m>[0m [90m28 |[0m           </div>
+  [90m   |[0m                 [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[31m[1m>[0m [90m29 |[0m
+  [90m   |[0m [31m[1m^[0m
+[31m[1m>[0m [90m30 |[0m           <div className=[32m"my-12 max-w-xl"[0m>
+  [90m   |[0m [31m[1m^^^^^^^^^^[0m
+  [90m31 |[0m             <p className=[32m"mb-4 text-sm font-medium uppercase tracking-[0.18em] text-[#f2c1...[0m
+  [90m32 |[0m               [33mSocial[0m workspace
+  [90m33 |[0m             </p>
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/app/page.tsx
+
+
+[browser] Uncaught Error: ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:28:17
+Expected '</', got 'jsx text'
+  26 |               Online
+  27 |             </span> */}
+> 28 |           </div>
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 29 |
+     | ^
+> 30 |           <div className="my-12 max-w-xl">
+     | ^^^^^^^^^^
+  31 |             <p className="mb-4 text-sm font-medium uppercase tracking-[0.18em] text-[#f2c1...
+  32 |               Social workspace
+  33 |             </p>
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/app/page.tsx
+
+
+    at <unknown> (Error: ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:28:17)
+    at <unknown> (Error: (./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:28:17)
+⨯ ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:24:22
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  [90m22 |[0m                 <p className=[32m"mt-1 text-xs text-[#b8c4c1]"[0m>[33mChat[0m and video calls</p>
+  [90m23 |[0m               </div>
+[31m[1m>[0m [90m24 |[0m             <[35m/div> */[0m}
+  [90m   |[0m                      [31m[1m^[0m
+  [90m25 |[0m             {[90m/* <span className="rounded-[8px] border border-white/15 px-3 py-2 text-xs te...[0m
+  [90m26 |[0m [90m              Online[0m
+  [90m27 |[0m [90m            </span> */[0m}
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/app/page.tsx
+
+
+⨯ ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:24:22
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  [90m22 |[0m                 <p className=[32m"mt-1 text-xs text-[#b8c4c1]"[0m>[33mChat[0m and video calls</p>
+  [90m23 |[0m               </div>
+[31m[1m>[0m [90m24 |[0m             <[35m/div> */[0m}
+  [90m   |[0m                      [31m[1m^[0m
+  [90m25 |[0m             {[90m/* <span className="rounded-[8px] border border-white/15 px-3 py-2 text-xs te...[0m
+  [90m26 |[0m [90m              Online[0m
+  [90m27 |[0m [90m            </span> */[0m}
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/app/page.tsx
+
+
+⨯ ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:24:22
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  [90m22 |[0m                 <p className=[32m"mt-1 text-xs text-[#b8c4c1]"[0m>[33mChat[0m and video calls</p>
+  [90m23 |[0m               </div>
+[31m[1m>[0m [90m24 |[0m             <[35m/div> */[0m}
+  [90m   |[0m                      [31m[1m^[0m
+  [90m25 |[0m             {[90m/* <span className="rounded-[8px] border border-white/15 px-3 py-2 text-xs te...[0m
+  [90m26 |[0m [90m              Online[0m
+  [90m27 |[0m [90m            </span> */[0m}
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/app/page.tsx
+
+
+[browser] Uncaught Error: ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:24:22
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  22 |                 <p className="mt-1 text-xs text-[#b8c4c1]">Chat and video calls</p>
+  23 |               </div>
+> 24 |             </div> */}
+     |                      ^
+  25 |             {/* <span className="rounded-[8px] border border-white/15 px-3 py-2 text-xs te...
+  26 |               Online
+  27 |             </span> */}
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/app/page.tsx
+
+
+    at <unknown> (Error: ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:24:22)
+    at <unknown> (Error: (./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:24:22)
+⨯ ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:27:23
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  [90m25 |[0m              <span className=[32m"rounded-[8px] border border-white/15 px-3 py-2 text-xs text-...[0m
+  [90m26 |[0m               [33mOnline[0m
+[31m[1m>[0m [90m27 |[0m             <[35m/span> */[0m}
+  [90m   |[0m                       [31m[1m^[0m
+  [90m28 |[0m           </div>
+  [90m29 |[0m
+  [90m30 |[0m           <div className=[32m"my-12 max-w-xl"[0m>
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/app/page.tsx
+
+
+⨯ ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:27:23
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  [90m25 |[0m              <span className=[32m"rounded-[8px] border border-white/15 px-3 py-2 text-xs text-...[0m
+  [90m26 |[0m               [33mOnline[0m
+[31m[1m>[0m [90m27 |[0m             <[35m/span> */[0m}
+  [90m   |[0m                       [31m[1m^[0m
+  [90m28 |[0m           </div>
+  [90m29 |[0m
+  [90m30 |[0m           <div className=[32m"my-12 max-w-xl"[0m>
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/app/page.tsx
+
+
+⨯ ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:27:23
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  [90m25 |[0m              <span className=[32m"rounded-[8px] border border-white/15 px-3 py-2 text-xs text-...[0m
+  [90m26 |[0m               [33mOnline[0m
+[31m[1m>[0m [90m27 |[0m             <[35m/span> */[0m}
+  [90m   |[0m                       [31m[1m^[0m
+  [90m28 |[0m           </div>
+  [90m29 |[0m
+  [90m30 |[0m           <div className=[32m"my-12 max-w-xl"[0m>
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/app/page.tsx
+
+
+[browser] Uncaught Error: ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:27:23
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  25 |              <span className="rounded-[8px] border border-white/15 px-3 py-2 text-xs text-...
+  26 |               Online
+> 27 |             </span> */}
+     |                       ^
+  28 |           </div>
+  29 |
+  30 |           <div className="my-12 max-w-xl">
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx
+    ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/app/page.tsx
+
+
+    at <unknown> (Error: ./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:27:23)
+    at <unknown> (Error: (./OneDrive/Documents/catting-videocall/my-fullstack-app/client/Login/Login.tsx:27:23)

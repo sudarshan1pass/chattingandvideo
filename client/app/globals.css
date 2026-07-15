@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f6f3ef;
+  --foreground: #1f1c19;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.chat-shell {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(31rem, 1fr) minmax(25rem, 0.9fr);
+}
+
+.icon-button {
+  align-items: center;
+  border-radius: 8px;
+  display: grid;
+  flex: 0 0 auto;
+  height: 2.5rem;
+  justify-items: center;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+  width: 2.5rem;
+}
+
+.icon-button:hover {
+  background: #f1e9f4;
+}
+
+.icon-button:active {
+  transform: translateY(1px);
+}
+
+.typing-dot {
+  animation: typing-breathe 1.1s infinite ease-in-out;
+  background: #8a7b96;
+  border-radius: 999px;
+  height: 0.38rem;
+  width: 0.38rem;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 140ms;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 280ms;
+}
+
+@keyframes typing-breathe {
+  0%,
+  60%,
+  100% {
+    opacity: 0.42;
+    transform: translateY(0);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(-0.16rem);
+  }
+}
+
+@media (min-width: 64rem) {
+  .chat-shell {
+    grid-template-columns: minmax(17rem, 20rem) minmax(26rem, 1fr) minmax(
+        20rem,
+        25rem
+      );
+    grid-template-rows: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typing-dot {
+    animation: none;
+  }
+}
