@@ -1,4 +1,4 @@
-const { saveMessage } = require('../controllers/chatController');
+const { saveMessage } = require('../controllers/chatcontroller');
 
 module.exports = (io) => {
      io.on("connection", (socket) => {

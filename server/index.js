@@ -13,7 +13,7 @@ const db = require("./Config/db");
 
 // Routes
 const chatRoutes = require("./routes/routes");
-const authRoutes = require("./routes/authRoutes");
+const authRoutes = require("./routes/authroutes");
 
 // Socket
 const chatSocket = require("./socket/server.js");
