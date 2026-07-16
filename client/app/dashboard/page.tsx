@@ -97,13 +97,14 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!currentUser) return;
 
-    socket.connect();
-    socket.emit("join", currentUser.id);
-
     const handleOnlineUsers = (userIds: string[]) => {
       setOnlineUserIds(
         new Set(userIds.map((userId) => userId.toString()))
       );
+    };
+
+    const joinCurrentUser = () => {
+      socket.emit("join", currentUser.id);
     };
 
     const handleIncomingCall = (call: IncomingCall) => {
@@ -148,6 +149,13 @@ export default function DashboardPage() {
     socket.on("call-ended", handleCallEnded);
     socket.on("receive-message", handleChatMessage);
     socket.on("call-log-message", handleChatMessage);
+    socket.on("connect", joinCurrentUser);
+
+    socket.connect();
+
+    if (socket.connected) {
+      joinCurrentUser();
+    }
 
     return () => {
       socket.off("online-users", handleOnlineUsers);
@@ -155,6 +163,7 @@ export default function DashboardPage() {
       socket.off("call-ended", handleCallEnded);
       socket.off("receive-message", handleChatMessage);
       socket.off("call-log-message", handleChatMessage);
+      socket.off("connect", joinCurrentUser);
     };
   }, [currentUser, selectedUser]);
 
@@ -287,6 +296,18 @@ export default function DashboardPage() {
 
   const selectedUserIsOnline =
     !!selectedUser && onlineUserIds.has(selectedUser.id);
+
+  const getMessageSenderName = (msg: Message) => {
+    if (msg.sender_id === currentUser?.id) {
+      return currentUser.name;
+    }
+
+    if (msg.sender_id === selectedUser?.id) {
+      return selectedUser.name;
+    }
+
+    return "Unknown user";
+  };
 
   return (
     <main className="h-screen bg-gray-100">
@@ -452,33 +473,52 @@ export default function DashboardPage() {
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4">
-                {messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`mb-3 flex ${msg.sender_id === currentUser?.id
-                      ? "justify-end"
-                      : "justify-start"
-                      }`}
-                  >
+                {messages.map((msg, index) => {
+                  const isSentByCurrentUser =
+                    msg.sender_id === currentUser?.id;
+                  const missedCallType =
+                    getMissedCallType(msg.message);
+
+                  return (
                     <div
-                      className={`max-w-[80%] rounded-3xl px-4 py-3 shadow ${msg.sender_id === currentUser?.id
-                        ? "bg-black text-white"
-                        : "bg-white"
-                        }`}
+                      key={msg.id || index}
+                      className={`mb-3 flex ${
+                        isSentByCurrentUser
+                          ? "justify-end"
+                          : "justify-start"
+                      }`}
                     >
-                      {getMissedCallType(msg.message) ? (
-                        <span className="inline-flex items-center gap-2">
-                          <CallIcon
-                            name={getMissedCallType(msg.message) || "audio"}
-                          />
-                          <span>{msg.message}</span>
-                        </span>
-                      ) : (
-                        msg.message
-                      )}
+                      <div
+                        className={`flex max-w-[80%] flex-col ${
+                          isSentByCurrentUser
+                            ? "items-end"
+                            : "items-start"
+                        }`}
+                      >
+                        <p className="mb-1 max-w-full truncate px-2 text-xs font-semibold text-gray-500">
+                          {getMessageSenderName(msg)}
+                        </p>
+
+                        <div
+                          className={`rounded-3xl px-4 py-3 shadow ${
+                            isSentByCurrentUser
+                              ? "bg-black text-white"
+                              : "bg-white text-gray-900"
+                          }`}
+                        >
+                          {missedCallType ? (
+                            <span className="inline-flex items-center gap-2">
+                              <CallIcon name={missedCallType} />
+                              <span>{msg.message}</span>
+                            </span>
+                          ) : (
+                            msg.message
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Input */}
