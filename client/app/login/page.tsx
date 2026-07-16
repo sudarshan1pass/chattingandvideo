@@ -8,6 +8,31 @@ import toast from "react-hot-toast";
 
 
 type AuthMode = "login" | "signup";
+type ApiError = {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+};
+
+const getErrorMessage = (
+  error: unknown,
+  fallback: string
+) => {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error
+  ) {
+    return (
+      (error as ApiError).response?.data?.message ||
+      fallback
+    );
+  }
+
+  return fallback;
+};
 
 export default function Login() {
   const [mode, setMode] = useState<AuthMode>("login");
@@ -45,12 +70,11 @@ export default function Login() {
      
 
      router.push("/dashboard"); 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.log(error);
 
       toast.error(
-        error.response?.data?.message ||
-          "Login Failed"
+        getErrorMessage(error, "Login Failed")
       );
     } finally {
       setLoading(false);
@@ -86,12 +110,11 @@ export default function Login() {
     setEmail("");
     setPassword("");
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.log(error);
 
     toast.error(
-      error.response?.data?.message ||
-        "Signup Failed"
+      getErrorMessage(error, "Signup Failed")
     );
   } finally {
     setLoading(false);

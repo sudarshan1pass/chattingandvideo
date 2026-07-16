@@ -26,6 +26,17 @@ type CallPayload = {
   candidate?: RTCIceCandidateInit;
 };
 
+type CallUnavailablePayload = {
+  callId?: string;
+  message?: string;
+  reason?: string;
+};
+
+type CallEndedPayload = Partial<CallPayload> & {
+  message?: string;
+  reason?: string;
+};
+
 type LiveCallProps = {
   callType: CallType;
 };
@@ -69,7 +80,6 @@ export function LiveCall({ callType }: LiveCallProps) {
   const peerIdRef = useRef("");
   const startedRef = useRef(false);
 
-  const [currentUser, setCurrentUser] = useState<StoredUser | null>(null);
   const [peerName, setPeerName] = useState("Contact");
   const [status, setStatus] = useState("Preparing call");
   const [muted, setMuted] = useState(false);
@@ -231,7 +241,7 @@ export function LiveCall({ callType }: LiveCallProps) {
       );
     };
 
-    const handleEnded = (data?: Partial<CallPayload>) => {
+    const handleEnded = (data?: CallEndedPayload) => {
       if (
         data?.callId &&
         callIdRef.current &&
@@ -240,7 +250,21 @@ export function LiveCall({ callType }: LiveCallProps) {
         return;
       }
 
-      toast("Call ended");
+      toast(data?.message || "Call ended");
+      cleanup();
+      router.push("/dashboard");
+    };
+
+    const handleUnavailable = (data: CallUnavailablePayload) => {
+      if (
+        data?.callId &&
+        callIdRef.current &&
+        data.callId !== callIdRef.current
+      ) {
+        return;
+      }
+
+      toast(data?.message || "Missed call");
       cleanup();
       router.push("/dashboard");
     };
@@ -249,6 +273,7 @@ export function LiveCall({ callType }: LiveCallProps) {
       socket.off("call-accepted", handleAccepted);
       socket.off("ice-candidate", handleCandidate);
       socket.off("call-ended", handleEnded);
+      socket.off("call-unavailable", handleUnavailable);
 
       peerConnectionRef.current?.close();
       peerConnectionRef.current = null;
@@ -271,7 +296,6 @@ export function LiveCall({ callType }: LiveCallProps) {
 
         if (!mounted) return;
 
-        setCurrentUser(user);
         socket.connect();
         socket.emit("join", user.id);
 
@@ -292,6 +316,7 @@ export function LiveCall({ callType }: LiveCallProps) {
         socket.on("call-accepted", handleAccepted);
         socket.on("ice-candidate", handleCandidate);
         socket.on("call-ended", handleEnded);
+        socket.on("call-unavailable", handleUnavailable);
 
         const stream = await setupLocalMedia();
         const peerConnection = createPeerConnection(peerId);

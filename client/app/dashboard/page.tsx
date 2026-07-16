@@ -14,9 +14,11 @@ type User = {
 };
 
 type Message = {
+  id?: string;
   sender_id: string;
   receiver_id?: string;
   message: string;
+  created_at?: string;
 };
 
 type IncomingCall = {
@@ -26,6 +28,19 @@ type IncomingCall = {
   receiverId: string;
   type: "audio" | "video";
   offer: RTCSessionDescriptionInit;
+};
+
+type CallEndedPayload = {
+  callId?: string;
+  message?: string;
+  reason?: string;
+};
+
+const getMissedCallType = (text: string) => {
+  if (text === "Missed audio call") return "audio";
+  if (text === "Missed video call") return "video";
+
+  return null;
 };
 
 export default function DashboardPage() {
@@ -42,20 +57,41 @@ export default function DashboardPage() {
 
   const [currentUser, setCurrentUser] =
     useState<User | null>(null);
+  const [onlineUserIds, setOnlineUserIds] =
+    useState<Set<string>>(new Set());
   const [incomingCall, setIncomingCall] =
     useState<IncomingCall | null>(null);
 
   useEffect(() => {
-    const storedUser =
-      localStorage.getItem("user");
+    let mounted = true;
 
-    if (storedUser) {
-      setCurrentUser(
-        JSON.parse(storedUser)
-      );
-    }
+    const loadDashboard = async () => {
+      const storedUser =
+        localStorage.getItem("user");
 
-    fetchUsers();
+      if (storedUser && mounted) {
+        setCurrentUser(
+          JSON.parse(storedUser)
+        );
+      }
+
+      try {
+        const { data } =
+          await api.get("/api/auth/users");
+
+        if (data.success && mounted) {
+          setUsers(data.users);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -64,54 +100,94 @@ export default function DashboardPage() {
     socket.connect();
     socket.emit("join", currentUser.id);
 
+    const handleOnlineUsers = (userIds: string[]) => {
+      setOnlineUserIds(
+        new Set(userIds.map((userId) => userId.toString()))
+      );
+    };
+
     const handleIncomingCall = (call: IncomingCall) => {
       if (call.callerId === currentUser.id) return;
 
       setIncomingCall(call);
     };
 
+    const handleCallEnded = (data: CallEndedPayload) => {
+      setIncomingCall((call) =>
+        call?.callId && call.callId === data.callId
+          ? null
+          : call
+      );
+    };
+
+    const handleChatMessage = (chatMessage: Message) => {
+      if (!selectedUser || !chatMessage.receiver_id) return;
+
+      const isCurrentConversation =
+        (chatMessage.sender_id === currentUser.id &&
+          chatMessage.receiver_id === selectedUser.id) ||
+        (chatMessage.sender_id === selectedUser.id &&
+          chatMessage.receiver_id === currentUser.id);
+
+      if (!isCurrentConversation) return;
+
+      setMessages((prev) => {
+        if (
+          chatMessage.id &&
+          prev.some((item) => item.id === chatMessage.id)
+        ) {
+          return prev;
+        }
+
+        return [...prev, chatMessage];
+      });
+    };
+
+    socket.on("online-users", handleOnlineUsers);
     socket.on("incoming-call", handleIncomingCall);
+    socket.on("call-ended", handleCallEnded);
+    socket.on("receive-message", handleChatMessage);
+    socket.on("call-log-message", handleChatMessage);
 
     return () => {
+      socket.off("online-users", handleOnlineUsers);
       socket.off("incoming-call", handleIncomingCall);
+      socket.off("call-ended", handleCallEnded);
+      socket.off("receive-message", handleChatMessage);
+      socket.off("call-log-message", handleChatMessage);
     };
-  }, [currentUser]);
+  }, [currentUser, selectedUser]);
 
   useEffect(() => {
-    if (selectedUser) {
-      fetchChatHistory();
-    }
+    if (!selectedUser) return;
+
+    let mounted = true;
+
+    const loadChatHistory = async () => {
+      try {
+        const { data } = await api.get(
+          `/api/chat/history/${selectedUser.id}`
+        );
+
+        if (data.success && mounted) {
+          setMessages(data.chats);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    loadChatHistory();
+
+    return () => {
+      mounted = false;
+    };
   }, [selectedUser]);
 
-  const fetchUsers = async () => {
-    try {
-      const { data } =
-        await api.get("/api/auth/users");
-
-      if (data.success) {
-        setUsers(data.users);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const fetchChatHistory = async () => {
-    try {
-      const { data } = await api.get(
-        `/api/chat/history/${selectedUser?.id}`
-      );
-
-      if (data.success) {
-        setMessages(data.chats);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const sendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() || !currentUser || !selectedUser) {
+      return;
+    }
 
     try {
       const { data } = await api.post(
@@ -123,15 +199,19 @@ export default function DashboardPage() {
       );
 
       if (data.success) {
+        const sentMessage = {
+          id: data.messageId,
+          sender_id: currentUser.id,
+          receiver_id: selectedUser.id,
+          message,
+          created_at: new Date().toISOString(),
+        };
+
         setMessages((prev) => [
           ...prev,
-          {
-            sender_id: currentUser?.id || "",
-            receiver_id:
-              selectedUser?.id,
-            message,
-          },
+          sentMessage,
         ]);
+        socket.emit("send-message", sentMessage);
 
         setMessage("");
       }
@@ -195,6 +275,7 @@ export default function DashboardPage() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    socket.disconnect();
 
 
     router.push("/login");
@@ -203,6 +284,9 @@ export default function DashboardPage() {
     );
 
   };
+
+  const selectedUserIsOnline =
+    !!selectedUser && onlineUserIds.has(selectedUser.id);
 
   return (
     <main className="h-screen bg-gray-100">
@@ -244,7 +328,10 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
-            {users.map((user) => (
+            {users.map((user) => {
+              const isOnline = onlineUserIds.has(user.id);
+
+              return (
               <button
                 key={user.id}
                 onClick={() =>
@@ -255,8 +342,16 @@ export default function DashboardPage() {
                   : "bg-white hover:bg-gray-100"
                   }`}
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 font-bold text-white">
-                  {user.name.charAt(0).toUpperCase()}
+                <div className="relative shrink-0">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 font-bold text-white">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+
+                  <span
+                    className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
+                      isOnline ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                  />
                 </div>
 
                 <div className="flex-1 text-left">
@@ -267,9 +362,22 @@ export default function DashboardPage() {
                   <p className="truncate text-sm opacity-70">
                     {user.email}
                   </p>
+
+                  <p
+                    className={`text-xs font-medium ${
+                      selectedUser?.id === user.id
+                        ? "text-white/75"
+                        : isOnline
+                          ? "text-green-600"
+                          : "text-gray-500"
+                    }`}
+                  >
+                    {isOnline ? "Online" : "Offline"}
+                  </p>
                 </div>
               </button>
-            ))}
+              );
+            })}
           </div>
         </aside>
 
@@ -307,8 +415,14 @@ export default function DashboardPage() {
                       {selectedUser.name}
                     </h2>
 
-                    <p className="text-xs text-green-500">
-                      Online
+                    <p
+                      className={`text-xs font-medium ${
+                        selectedUserIsOnline
+                          ? "text-green-500"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      {selectedUserIsOnline ? "Online" : "Offline"}
                     </p>
                   </div>
                 </div>
@@ -352,7 +466,16 @@ export default function DashboardPage() {
                         : "bg-white"
                         }`}
                     >
-                      {msg.message}
+                      {getMissedCallType(msg.message) ? (
+                        <span className="inline-flex items-center gap-2">
+                          <CallIcon
+                            name={getMissedCallType(msg.message) || "audio"}
+                          />
+                          <span>{msg.message}</span>
+                        </span>
+                      ) : (
+                        msg.message
+                      )}
                     </div>
                   </div>
                 ))}

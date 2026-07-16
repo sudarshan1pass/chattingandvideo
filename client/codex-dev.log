@@ -1,0 +1,14 @@
+
+> client@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.239.75.101:3000
+- Environments: .env
+✓ Ready in 1317ms
+Creating turbopack project {
+  dir: 'C:\\Users\\Dell\\OneDrive\\Documents\\catting-videocall\\my-fullstack-app\\client',
+  testMode: true
+}
+
